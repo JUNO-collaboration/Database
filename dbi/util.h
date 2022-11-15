@@ -15,9 +15,7 @@ namespace dbi {
     }
 
     template<>
-    void dbi_record_cnv<std::string>(const std::string& from, std::string& to) {
-        to = from;
-    }
+    void dbi_record_cnv<std::string>(const std::string& from, std::string& to);
 
     // helper for ResultSet
     template<size_t Index, size_t IndexR, 

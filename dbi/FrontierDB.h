@@ -16,11 +16,16 @@ namespace dbi {
 
         }
 
+        FrontierDB(const std::string& url, const std::string& proxy_url) 
+            : m_url(url), m_proxy_url(proxy_url) {
+
+        }
+
         // doConnect
         bool doConnect() {
             std::cout << "url: " << m_url << std::endl;
             std::list<std::string> servers{m_url};
-            std::list<std::string> proxies{};
+            std::list<std::string> proxies{m_proxy_url};
             m_connection = std::make_shared<frontier::Connection>(servers, proxies);
 
             return true;
@@ -90,6 +95,7 @@ namespace dbi {
     private:
         // configurations
         std::string m_url;
+        std::string m_proxy_url;
 
     private:
         // initialized after doConnect

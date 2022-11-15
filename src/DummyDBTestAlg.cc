@@ -34,6 +34,26 @@ namespace dbi {
 
 }
 
+struct DummyDBTestConfig {
+    std::string frontier_url = "http://junodb1.ihep.ac.cn:8000/Frontier";
+    std::string proxy_url = "http://junosquid01.ihep.ac.cn:3128";
+
+    std::string frontier_legacy_url = "http://junodb1.ihep.ac.cn:8080/Frontier";
+
+    std::string mysql_server = "junodb1.ihep.ac.cn";
+
+    std::string stmt_select_one = "select 1 from dual";
+    std::string stmt_select_one_sqlite = "select 1";
+    std::string stmt_select_time = "select current_timestamp()";
+    std::string stmt_select_date = "select DATE_FORMAT(now(),'%Y-%m-%d_%H:%i')";
+
+    std::string stmt_select_id_spms = "select id from spms.global_tag";
+
+    std::string stmt_select_sftver = "select sftver from OfflineDB.GlobalTag";
+    std::string stmt_select_serno = "select serno from OfflineDB.GlobalTag";
+
+    std::string stmt_select_globaltag = "select sftver,cond_gtag,para_gtag,creator,create_time from OfflineDB.GlobalTag";
+};
 
 struct DummyDBTestAlg: public AlgBase {
 
@@ -56,18 +76,24 @@ struct DummyDBTestAlg: public AlgBase {
 
         m_dbapi = new dbi::DBAPI(dummydb);
 
-        std::string url = "http://junodb1.ihep.ac.cn:8080/Frontier";
-        dbi::FrontierDB frontierdb{url};
+        dbi::FrontierDB frontierdb{m_config.frontier_legacy_url};
 
         m_frontierapi = new dbi::DBAPI(frontierdb);
         m_frontierapi->connect();
+
+
+        dbi::FrontierDB frontierproxydb{m_config.frontier_url, 
+                                        m_config.proxy_url};
+
+        m_frontierproxyapi = new dbi::DBAPI(frontierproxydb);
+        m_frontierproxyapi->connect();
 
 
         if (m_mycnf.size()) { // use my.cnf
             dbi::MysqlDB mysqldb{m_mycnf, m_mycnfgrp};
             m_mysqlapi = new dbi::DBAPI(mysqldb);
         } else if (m_user.size() and m_pass.size()) { // use 
-            dbi::MysqlDB mysqldb{"junodb1.ihep.ac.cn", m_user, m_pass};
+            dbi::MysqlDB mysqldb{m_config.mysql_server, m_user, m_pass};
             m_mysqlapi = new dbi::DBAPI(mysqldb);
         } else {
             LogError << "Neither my.cnf file nor user/pass are specified. "
@@ -93,7 +119,7 @@ struct DummyDBTestAlg: public AlgBase {
     bool execute() {
 
         std::cout << "DummyDB: " << std::endl;
-        auto results = m_dbapi->query<int>("select 1 from dual");
+        auto results = m_dbapi->query<int>(m_config.stmt_select_one);
 
         std::cout << "size: " << results.size() << std::endl;
 
@@ -103,7 +129,7 @@ struct DummyDBTestAlg: public AlgBase {
         }
 
         std::cout << "FrontierDB: " << std::endl;
-        results = m_frontierapi->query<int>("select 1 from dual");
+        results = m_frontierapi->query<int>(m_config.stmt_select_one);
         for (auto result: results) {
             auto [one] = result;
             std::cout << "one: " << one << std::endl;
@@ -111,14 +137,14 @@ struct DummyDBTestAlg: public AlgBase {
 
 
         std::cout << "FrontierDB global tag: " << std::endl;
-        auto results_gt = m_frontierapi->query<std::string>("select id from spms.global_tag");
+        auto results_gt = m_frontierapi->query<std::string>(m_config.stmt_select_id_spms);
         for (auto result: results_gt) {
             auto [one] = result;
             std::cout << "one: " << one << std::endl;
         }
 
         std::cout << "FrontierDB global tag (OfflineDB): " << std::endl;
-        auto results_gt_offlinedb = m_frontierapi->query<std::string>("select SftVer from OfflineDB.GlobalTag");
+        auto results_gt_offlinedb = m_frontierapi->query<std::string>(m_config.stmt_select_sftver);
         for (auto result: results_gt_offlinedb) {
             auto [one] = result;
             std::cout << "one: " << one << std::endl;
@@ -131,7 +157,7 @@ struct DummyDBTestAlg: public AlgBase {
                              std::string, // ParaGTag
                              std::string, // Creator
                              std::string  // CreateTime
-                             >("select SftVer,CondGTag,ParaGTag,Creator,CreateTime from OfflineDB.GlobalTag");
+                             >(m_config.stmt_select_globaltag);
 
         for (auto result: results_globaltag_offlinedb) {
             auto [sftver, condgtag, paragtag, creator, createtime] = result;
@@ -154,8 +180,7 @@ struct DummyDBTestAlg: public AlgBase {
             return GlobalTag{sftver, condgtag, paragtag, creator, createtime};
         };
 
-        std::string stmt_globaltag_offlinedb = 
-            "select SftVer,CondGTag,ParaGTag,Creator,CreateTime from OfflineDB.GlobalTag";
+        std::string stmt_globaltag_offlinedb = m_config.stmt_select_globaltag;
         for (auto result: m_frontierapi->query(stmt_globaltag_offlinedb, convert_to_gt)) {
             std::cout << "GlobalTag: "
                       << " SftVer: " << result.SftVer
@@ -213,7 +238,7 @@ struct DummyDBTestAlg: public AlgBase {
 
 
         std::cout << "MysqlDB global tag (OfflineDB): " << std::endl;
-        for (auto result: m_mysqlapi->query<std::string>("select SftVer from OfflineDB.GlobalTag")) {
+        for (auto result: m_mysqlapi->query<std::string>(m_config.stmt_select_sftver)) {
             auto [one] = result;
             std::cout << "one: " << one << std::endl;
         }
@@ -243,17 +268,17 @@ struct DummyDBTestAlg: public AlgBase {
         for (auto result: 
                  m_mysqlapi->query<
                  int
-                 >("select SerNO from OfflineDB.GlobalTag")) {
+                 >(m_config.stmt_select_serno)) {
             auto [serno] = result;
             std::cout << "GlobalTag: "
-                      << " SftNO: " << serno
+                      << " SerNO: " << serno
                       << std::endl;
         }
 
         for (auto result: 
                  m_mysqlapi->query<
                  std::string
-                 >("select current_timestamp()")) {
+                 >(m_config.stmt_select_time)) {
             auto [current_timestamp] = result;
             std::cout << "Current Timestamp: "
                       << " current_timestamp(): " << current_timestamp
@@ -262,13 +287,13 @@ struct DummyDBTestAlg: public AlgBase {
 
 
         std::cout << "Testing the current DBAPIs: " << std::endl;
-        std::vector<dbi::DBAPI*> vec_dbapi{m_dbapi, m_frontierapi, m_mysqlapi};
+        std::vector<dbi::DBAPI*> vec_dbapi{m_dbapi, m_frontierapi, m_frontierproxyapi, m_mysqlapi};
 
         for (auto dbapi: vec_dbapi) {
             for (auto result: 
                      dbapi->query<
                      std::string
-                     >("select DATE_FORMAT(now(),'%Y-%m-%d_%H:%i')")) {
+                     >(m_config.stmt_select_date)) {
                 auto [current_timestamp] = result;
                 std::cout << "Current Timestamp: "
                           << " current_timestamp(): " << current_timestamp
@@ -278,7 +303,7 @@ struct DummyDBTestAlg: public AlgBase {
 
         if (m_sqliteapi) {
             std::cout << "sqlite: " << std::endl;
-            for (auto result: m_sqliteapi->query<int>("select 1")) {
+            for (auto result: m_sqliteapi->query<int>(m_config.stmt_select_one_sqlite)) {
                 auto [one] = result;
                 std::cout << "one: " << one << std::endl;
             }
@@ -293,6 +318,7 @@ struct DummyDBTestAlg: public AlgBase {
 
     dbi::DBAPI* m_dbapi{nullptr};
     dbi::DBAPI* m_frontierapi{nullptr};
+    dbi::DBAPI* m_frontierproxyapi{nullptr};
     dbi::DBAPI* m_mysqlapi{nullptr};
     dbi::DBAPI* m_sqliteapi{nullptr};
 
@@ -305,6 +331,8 @@ struct DummyDBTestAlg: public AlgBase {
     std::string m_mycnfgrp;
 
     std::string m_sqlitefn;
+
+    DummyDBTestConfig m_config;
 };
 
 DECLARE_ALGORITHM(DummyDBTestAlg);

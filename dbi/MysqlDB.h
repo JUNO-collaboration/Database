@@ -71,7 +71,7 @@ namespace dbi {
                 for (int i = 0; i < num_fields; ++i) {
                     // std::cout << "DEBUG " << row[i] << std::endl;
 
-                    rs.m_internals.push_back(row[i]);
+                    rs.m_internals.push_back(row[i]?row[i]:"");
                 }
 
                 results.push_back(rs);
