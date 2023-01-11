@@ -88,7 +88,7 @@ struct DummyDBTestAlg: public AlgBase {
         m_frontierproxyapi = new dbi::DBAPI(frontierproxydb);
         m_frontierproxyapi->connect();
 
-
+#ifndef BUILD_ONLINE
         if (m_mycnf.size()) { // use my.cnf
             dbi::MysqlDB mysqldb{m_mycnf, m_mycnfgrp};
             m_mysqlapi = new dbi::DBAPI(mysqldb);
@@ -100,6 +100,7 @@ struct DummyDBTestAlg: public AlgBase {
                      << std::endl;
             return false;
         }
+#endif
 
         if (m_mysqlapi->connect()) {
             LogInfo << "MySQL DB Connected. " << std::endl;

@@ -1,6 +1,8 @@
 #ifndef dbi_MysqlDB_h
 #define dbi_MysqlDB_h
 
+#ifndef BUILD_ONLINE
+
 #include <dbi/dbi.h>
 #include <mysql.h>
 
@@ -101,5 +103,6 @@ namespace dbi {
     };
 
 }
+#endif
 
 #endif
