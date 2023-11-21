@@ -5,6 +5,8 @@
 #include <frontier_client/frontier-cpp.h>
 
 #include <memory>
+#include <mutex>
+#include <iostream>
 
 namespace dbi {
 
@@ -33,6 +35,8 @@ namespace dbi {
 
         // doQuery
         std::vector<ResultSet> doQuery(const std::string& str) {
+            std::scoped_lock<std::mutex> lock(m_query_mutex);
+
             frontier::Session sess(m_connection.get());
 
             const std::string param=frontier::Request::encodeParam(str);
@@ -101,6 +105,9 @@ namespace dbi {
         // initialized after doConnect
         // std::unique_ptr<frontier::Connection> m_connection{nullptr};
         std::shared_ptr<frontier::Connection> m_connection{nullptr};
+
+    private:
+        static std::mutex m_query_mutex;
 
     };
 

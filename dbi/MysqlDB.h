@@ -7,6 +7,8 @@
 #include <mysql.h>
 
 #include <memory>
+#include <mutex>
+#include <iostream>
 
 namespace dbi {
 
@@ -26,6 +28,7 @@ namespace dbi {
         }
 
         bool doConnect() {
+            std::scoped_lock<std::mutex> lock(m_connect_mutex);
 
             MYSQL* internal_connection{nullptr};
             internal_connection = mysql_init(nullptr);
@@ -55,6 +58,8 @@ namespace dbi {
         }
 
         std::vector<ResultSet> doQuery(const std::string& str) {
+            std::scoped_lock<std::mutex> lock(m_query_mutex);
+
             std::vector<ResultSet> results;
 
             if (mysql_real_query(m_connection.get(), str.c_str(), str.length())) {
@@ -99,6 +104,9 @@ namespace dbi {
     private:
         // initialized after doConnect
         std::shared_ptr<MYSQL> m_connection{nullptr};
+    private:
+        static std::mutex m_connect_mutex;
+        static std::mutex m_query_mutex;
 
     };
 
