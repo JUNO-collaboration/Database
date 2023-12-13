@@ -14,21 +14,32 @@ namespace dbi {
 
         // constructor
         FrontierDB(const std::string& url) 
-        : m_url(url) {
+            : m_server_urls({url}) {
 
         }
 
         FrontierDB(const std::string& url, const std::string& proxy_url) 
-            : m_url(url), m_proxy_url(proxy_url) {
+            : m_server_urls({url}), m_proxy_urls({proxy_url}) {
+
+        }
+
+        FrontierDB(const std::list<std::string>& urls, const std::list<std::string>& proxy_urls) 
+            : m_server_urls(urls), m_proxy_urls(proxy_urls) {
 
         }
 
         // doConnect
         bool doConnect() {
-            std::cout << "url: " << m_url << std::endl;
-            std::list<std::string> servers{m_url};
-            std::list<std::string> proxies{m_proxy_url};
-            m_connection = std::make_shared<frontier::Connection>(servers, proxies);
+            std::cout << "Frontier Connections: " << std::endl;
+            std::cout << "  -- Server: " << std::endl;
+            for (auto& url: m_server_urls) {
+                std::cout << "    -- " << url << std::endl;
+            }
+            std::cout << "  -- Proxy: " << std::endl;
+            for (auto& url: m_proxy_urls) {
+                std::cout << "    -- " << url << std::endl;
+            }
+            m_connection = std::make_shared<frontier::Connection>(m_server_urls, m_proxy_urls);
 
             return true;
         }
@@ -98,8 +109,8 @@ namespace dbi {
 
     private:
         // configurations
-        std::string m_url;
-        std::string m_proxy_url;
+        std::list<std::string> m_server_urls;
+        std::list<std::string> m_proxy_urls;
 
     private:
         // initialized after doConnect

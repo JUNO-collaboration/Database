@@ -49,7 +49,7 @@ namespace dbi {
 
             tuple_element_helper<std::tuple_size_v<TupleT>, 0>(m_internals, result);
             return true;
-        };
+        }
 
         // the backend should fill the results
         std::vector<std::string> m_internals;
