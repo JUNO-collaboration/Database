@@ -30,6 +30,8 @@ namespace dbi {
 
         // doConnect
         bool doConnect() {
+            std::scoped_lock<std::mutex> lock(m_conn_mutex);
+
             std::cout << "Frontier Connections: " << std::endl;
             std::cout << "  -- Server: " << std::endl;
             for (auto& url: m_server_urls) {
@@ -118,6 +120,7 @@ namespace dbi {
         std::shared_ptr<frontier::Connection> m_connection{nullptr};
 
     private:
+        static std::mutex m_conn_mutex;
         static std::mutex m_query_mutex;
 
     };
